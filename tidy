@@ -1,1 +1,49 @@
 #!/bin/bash
+
+# getopt
+SHORT_OPTS="ar"
+LONG_OPTS="archive,rsync,only-archive"
+PARSED_OPTS=$(getopt --options $SHORT_OPTS --longoptions $LONG_OPTS --name "$0" -- "$@")
+if [[ $? -ne 0 ]]; then
+  exit 1
+fi
+eval set -- "$PARSED_OPTS" # Strings after `--` will be treated as parameters
+
+# reading options
+mode=""
+only_archive=""
+
+while true; do
+  case $1 in
+    -a|--archive)
+      if [[ -n $mode ]]; then
+        mode="archive"
+      else
+        echo "Sorry, we can only do same type of things at once." >&2
+      fi
+      ;;
+    -r|--rsync)
+      if [[ -n $mode ]]; then
+        mode="rsync"
+      else
+        echo "Sorry, we can only do same type of things at once." >&2
+      fi
+      ;;
+    --only-archive)
+      if [[ $mode == "rsync" ]]; then
+        only_archive="Y"
+      else
+        echo "Option '--only-archive' should come after '-r|--rsync'" >&2
+      fi
+      ;;
+    --)
+      break
+      ;;
+    *)
+      echo "Wrong Input!" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# reading parameters
