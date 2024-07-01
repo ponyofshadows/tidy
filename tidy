@@ -5,9 +5,12 @@ SHORT_OPTS="ar"
 LONG_OPTS="archive,rsync,only-archive"
 PARSED_OPTS=$(getopt --options $SHORT_OPTS --longoptions $LONG_OPTS --name "$0" -- "$@")
 if [[ $? -ne 0 ]]; then
-  exit 1
+  echo "Wrong Input!" >&2
+  exit 2
 fi
 eval set -- "$PARSED_OPTS" # Strings after `--` will be treated as parameters
+
+unset SHORT_OPTS LONG_OPTS PARSED_OPTS
 
 # reading options
 mode=""
@@ -16,32 +19,38 @@ only_archive=""
 while true; do
   case $1 in
     -a|--archive)
-      if [[ -n $mode ]]; then
+      if [[ -z $mode ]]; then
         mode="archive"
-      else
+      elif [[ $mode != "archive" ]]; then
         echo "Sorry, we can only do same type of things at once." >&2
+        exit 2
       fi
+      shift
       ;;
     -r|--rsync)
-      if [[ -n $mode ]]; then
+      if [ -z $mode ]; then
         mode="rsync"
-      else
+      elif [[ $mode != "rsync" ]]; then
         echo "Sorry, we can only do same type of things at once." >&2
+        exit 2
       fi
+      shift
       ;;
     --only-archive)
       if [[ $mode == "rsync" ]]; then
         only_archive="Y"
       else
         echo "Option '--only-archive' should come after '-r|--rsync'" >&2
+        exit 2
       fi
+      shift
       ;;
     --)
       break
       ;;
     *)
       echo "Wrong Input!" >&2
-      exit 1
+      exit 2
       ;;
   esac
 done
