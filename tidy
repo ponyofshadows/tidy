@@ -46,6 +46,7 @@ while true; do
       shift
       ;;
     --)
+      shift
       break
       ;;
     *)
