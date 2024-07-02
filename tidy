@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+ARCHIVE_PATH="$HOME/.archive"
 
 # getopt
 SHORT_OPTS="ar"
@@ -56,4 +58,64 @@ while true; do
   esac
 done
 
-# reading parameters
+# parameters: $@
+case $mode in 
+  archive)
+    for file in "$@"; do
+      if [[ "$file" == */* ]]; then
+        # `file` is a path
+        if [[ "$(basename "$file")" == .* ]]; then
+          echo "Wrong Path!" >&2
+          exit 1
+        fi
+        if [[ "$file" == $HOME/.archive/* ]]; then
+          # reduce
+          date_basename=$(basename "$file")
+          inital_basename=${date_basename:6}
+          mv "$file" "$HOME/$inital_basename"
+        elif [[ "$file" == $HOME/* ]]; then
+          # archive
+          mv "$file" "$ARCHIVE_PATH/$(date +%y%m%d)$(basename $file)"
+        else
+          echo "Wrong Path!" >&2
+          exit 1
+        fi
+      else
+        # `file` is a name
+        if [[ "$file" == .* ]]; then
+          echo "Wrong Name!" >&2
+          exit 1
+        fi
+        if [[ -e "$HOME/$file" ]]; then
+          # archive
+          mv "$HOME/$file" "$ARCHIVE_PATH/$(date +%y%m%d)$file"
+        else
+          # reduce
+          matched_archives=( $(echo $ARCHIVE_PATH/$(date +%y)[0-9][0-9][0-9][0-9]$file) )
+          match_number=${#matched_archives[@]}
+          case $match_number in
+            0)
+              echo "Wrong Name!" >&2
+              exit 1
+              ;;
+            1)
+              mv "${matched_archives[0]}" "$HOME/$file"
+              ;;
+            *)
+              for matched_archive in "${matched_archives[@]}"; do
+                read -p "Reduce this archive '$matched_archive'?(y/n):" confirm_reduce
+                if [[ "$confirm_reduce" == "y" ]]; then
+                  mv "$matched_archive" "$HOME/$file"
+                  break
+                fi
+              done
+              ;;
+          esac
+        fi
+      fi
+    done
+    ;;
+  rsync)
+    :
+    ;;
+esac
