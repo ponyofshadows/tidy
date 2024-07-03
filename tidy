@@ -40,7 +40,7 @@ while true; do
       ;;
     --only-archive)
       if [[ $mode == "rsync" ]]; then
-        only_archive="Y"
+        only_archive="y"
       else
         echo "Option '--only-archive' should come after '-r|--rsync'" >&2
         exit 2
@@ -116,6 +116,29 @@ case $mode in
     done
     ;;
   rsync)
-    :
+    case $# in
+      0)
+        rsync_from="$HOME"
+        rsync_to="/mnt"
+        ;;
+      1)
+        rsync_from="$HOME"
+        rsync_to="$1"
+        ;;
+      2)
+        rsync_from="$1"
+        rsync_to="$2"
+        ;;
+      *)
+        echo "Too many parameters!" >&2
+        exit 2
+        ;;
+    esac
+
+    if [[ -z "$only_archive" ]]; then
+    rsync -rlptH --delete --exclude "/.*" --progress "$rsync_from/" "$rsync_to/"
+    sudo rsync -aH --delete --progress "$rsync_from/.usr" "$rsync_to/"
+    fi
+    rsync -rlptH --progress "$rsync_from/.archive" "$rsync_to/"
     ;;
 esac
